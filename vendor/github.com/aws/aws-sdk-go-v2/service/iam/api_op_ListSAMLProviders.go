@@ -15,12 +15,11 @@ import (
 // resource-listing operations return a subset of the available attributes for the
 // resource. For example, this operation does not return tags, even though they are
 // an attribute of the returned object. To view all of the information for a SAML
-// provider, see [GetSAMLProvider].
+// provider, see GetSAMLProvider.
 //
 // This operation requires [Signature Version 4].
 //
 // [Signature Version 4]: https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html
-// [GetSAMLProvider]: https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetSAMLProvider.html
 func (c *Client) ListSAMLProviders(ctx context.Context, params *ListSAMLProvidersInput, optFns ...func(*Options)) (*ListSAMLProvidersOutput, error) {
 	if params == nil {
 		params = &ListSAMLProvidersInput{}
@@ -40,9 +39,7 @@ type ListSAMLProvidersInput struct {
 	noSmithyDocumentSerde
 }
 
-// Contains the response to a successful [ListSAMLProviders] request.
-//
-// [ListSAMLProviders]: https://docs.aws.amazon.com/IAM/latest/APIReference/API_ListSAMLProviders.html
+// Contains the response to a successful ListSAMLProviders request.
 type ListSAMLProvidersOutput struct {
 
 	// The list of SAML provider resource objects defined in IAM for this Amazon Web
@@ -119,9 +116,6 @@ func (c *Client) addOperationListSAMLProvidersMiddlewares(stack *middleware.Stac
 	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
-	if err = addCredentialSource(stack, options); err != nil {
-		return err
-	}
 	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opListSAMLProviders(options.Region), middleware.Before); err != nil {
 		return err
 	}
@@ -140,13 +134,16 @@ func (c *Client) addOperationListSAMLProvidersMiddlewares(stack *middleware.Stac
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
+	if err = addSpanInitializeStart(stack); err != nil {
 		return err
 	}
-	if err = addInterceptAttempt(stack, options); err != nil {
+	if err = addSpanInitializeEnd(stack); err != nil {
 		return err
 	}
-	if err = addInterceptors(stack, options); err != nil {
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil

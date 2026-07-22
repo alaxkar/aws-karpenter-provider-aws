@@ -29,10 +29,9 @@ import (
 // you temporarily store tokens. For information, see [Activating and deactivating STS in an Amazon Web Services Region]in the IAM User Guide.
 //
 // To view the current session token version, see the GlobalEndpointTokenVersion
-// entry in the response of the [GetAccountSummary]operation.
+// entry in the response of the GetAccountSummaryoperation.
 //
 // [Activating and deactivating STS in an Amazon Web Services Region]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_enable-regions.html
-// [GetAccountSummary]: https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetAccountSummary.html
 // [Security Token Service endpoints and quotas]: https://docs.aws.amazon.com/general/latest/gr/sts.html
 func (c *Client) SetSecurityTokenServicePreferences(ctx context.Context, params *SetSecurityTokenServicePreferencesInput, optFns ...func(*Options)) (*SetSecurityTokenServicePreferencesOutput, error) {
 	if params == nil {
@@ -138,9 +137,6 @@ func (c *Client) addOperationSetSecurityTokenServicePreferencesMiddlewares(stack
 	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
-	if err = addCredentialSource(stack, options); err != nil {
-		return err
-	}
 	if err = addOpSetSecurityTokenServicePreferencesValidationMiddleware(stack); err != nil {
 		return err
 	}
@@ -162,13 +158,16 @@ func (c *Client) addOperationSetSecurityTokenServicePreferencesMiddlewares(stack
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
+	if err = addSpanInitializeStart(stack); err != nil {
 		return err
 	}
-	if err = addInterceptAttempt(stack, options); err != nil {
+	if err = addSpanInitializeEnd(stack); err != nil {
 		return err
 	}
-	if err = addInterceptors(stack, options); err != nil {
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil

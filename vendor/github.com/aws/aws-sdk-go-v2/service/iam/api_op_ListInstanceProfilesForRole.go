@@ -66,9 +66,7 @@ type ListInstanceProfilesForRoleInput struct {
 	noSmithyDocumentSerde
 }
 
-// Contains the response to a successful [ListInstanceProfilesForRole] request.
-//
-// [ListInstanceProfilesForRole]: https://docs.aws.amazon.com/IAM/latest/APIReference/API_ListInstanceProfilesForRole.html
+// Contains the response to a successful ListInstanceProfilesForRole request.
 type ListInstanceProfilesForRoleOutput struct {
 
 	// A list of instance profiles.
@@ -158,9 +156,6 @@ func (c *Client) addOperationListInstanceProfilesForRoleMiddlewares(stack *middl
 	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
-	if err = addCredentialSource(stack, options); err != nil {
-		return err
-	}
 	if err = addOpListInstanceProfilesForRoleValidationMiddleware(stack); err != nil {
 		return err
 	}
@@ -182,13 +177,16 @@ func (c *Client) addOperationListInstanceProfilesForRoleMiddlewares(stack *middl
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
+	if err = addSpanInitializeStart(stack); err != nil {
 		return err
 	}
-	if err = addInterceptAttempt(stack, options); err != nil {
+	if err = addSpanInitializeEnd(stack); err != nil {
 		return err
 	}
-	if err = addInterceptors(stack, options); err != nil {
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil

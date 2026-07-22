@@ -34,20 +34,17 @@ func (c *Client) RemoveClientIDFromOpenIDConnectProvider(ctx context.Context, pa
 type RemoveClientIDFromOpenIDConnectProviderInput struct {
 
 	// The client ID (also known as audience) to remove from the IAM OIDC provider
-	// resource. For more information about client IDs, see [CreateOpenIDConnectProvider].
-	//
-	// [CreateOpenIDConnectProvider]: https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateOpenIDConnectProvider.html
+	// resource. For more information about client IDs, see CreateOpenIDConnectProvider.
 	//
 	// This member is required.
 	ClientID *string
 
 	// The Amazon Resource Name (ARN) of the IAM OIDC provider resource to remove the
-	// client ID from. You can get a list of OIDC provider ARNs by using the [ListOpenIDConnectProviders]operation.
+	// client ID from. You can get a list of OIDC provider ARNs by using the ListOpenIDConnectProvidersoperation.
 	//
 	// For more information about ARNs, see [Amazon Resource Names (ARNs)] in the Amazon Web Services General
 	// Reference.
 	//
-	// [ListOpenIDConnectProviders]: https://docs.aws.amazon.com/IAM/latest/APIReference/API_ListOpenIDConnectProviders.html
 	// [Amazon Resource Names (ARNs)]: https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html
 	//
 	// This member is required.
@@ -127,9 +124,6 @@ func (c *Client) addOperationRemoveClientIDFromOpenIDConnectProviderMiddlewares(
 	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
-	if err = addCredentialSource(stack, options); err != nil {
-		return err
-	}
 	if err = addOpRemoveClientIDFromOpenIDConnectProviderValidationMiddleware(stack); err != nil {
 		return err
 	}
@@ -151,13 +145,16 @@ func (c *Client) addOperationRemoveClientIDFromOpenIDConnectProviderMiddlewares(
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
+	if err = addSpanInitializeStart(stack); err != nil {
 		return err
 	}
-	if err = addInterceptAttempt(stack, options); err != nil {
+	if err = addSpanInitializeEnd(stack); err != nil {
 		return err
 	}
-	if err = addInterceptors(stack, options); err != nil {
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil

@@ -13,11 +13,6 @@ import (
 
 // Get information about a single parameter by specifying the parameter name.
 //
-// Parameter names can't contain spaces. The service removes any spaces specified
-// for the beginning or end of a parameter name. If the specified name for a
-// parameter contains spaces between characters, the request fails with a
-// ValidationException error.
-//
 // To get information about more than one parameter at a time, use the GetParameters operation.
 func (c *Client) GetParameter(ctx context.Context, params *GetParameterInput, optFns ...func(*Options)) (*GetParameterOutput, error) {
 	if params == nil {
@@ -132,9 +127,6 @@ func (c *Client) addOperationGetParameterMiddlewares(stack *middleware.Stack, op
 	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
-	if err = addCredentialSource(stack, options); err != nil {
-		return err
-	}
 	if err = addOpGetParameterValidationMiddleware(stack); err != nil {
 		return err
 	}
@@ -156,13 +148,16 @@ func (c *Client) addOperationGetParameterMiddlewares(stack *middleware.Stack, op
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
+	if err = addSpanInitializeStart(stack); err != nil {
 		return err
 	}
-	if err = addInterceptAttempt(stack, options); err != nil {
+	if err = addSpanInitializeEnd(stack); err != nil {
 		return err
 	}
-	if err = addInterceptors(stack, options); err != nil {
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil

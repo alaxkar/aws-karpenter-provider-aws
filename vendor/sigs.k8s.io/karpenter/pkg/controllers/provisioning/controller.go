@@ -31,13 +31,7 @@ import (
 	v1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 	"sigs.k8s.io/karpenter/pkg/controllers/state"
 	"sigs.k8s.io/karpenter/pkg/operator/injection"
-	utilscontroller "sigs.k8s.io/karpenter/pkg/utils/controller"
 	"sigs.k8s.io/karpenter/pkg/utils/pod"
-)
-
-const (
-	minReconciles = 10
-	maxReconciles = 1000
 )
 
 // PodController for the resource
@@ -57,12 +51,8 @@ func NewPodController(kubeClient client.Client, provisioner *Provisioner, cluste
 }
 
 // Reconcile the resource
-func (c *PodController) Name() string {
-	return "provisioner.trigger.pod"
-}
-
 func (c *PodController) Reconcile(ctx context.Context, p *corev1.Pod) (reconcile.Result, error) {
-	ctx = injection.WithControllerName(ctx, c.Name()) //nolint:ineffassign,staticcheck
+	ctx = injection.WithControllerName(ctx, "provisioner.trigger.pod") //nolint:ineffassign,staticcheck
 
 	if !pod.IsProvisionable(p) {
 		return reconcile.Result{}, nil
@@ -77,11 +67,11 @@ func (c *PodController) Reconcile(ctx context.Context, p *corev1.Pod) (reconcile
 	return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 }
 
-func (c *PodController) Register(ctx context.Context, m manager.Manager) error {
+func (c *PodController) Register(_ context.Context, m manager.Manager) error {
 	return controllerruntime.NewControllerManagedBy(m).
-		Named(c.Name()).
+		Named("provisioner.trigger.pod").
 		For(&corev1.Pod{}).
-		WithOptions(controller.Options{MaxConcurrentReconciles: utilscontroller.LinearScaleReconciles(utilscontroller.CPUCount(ctx), minReconciles, maxReconciles)}).
+		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
 		Complete(reconcile.AsReconciler(m.GetClient(), c))
 }
 
@@ -100,13 +90,9 @@ func NewNodeController(kubeClient client.Client, provisioner *Provisioner) *Node
 }
 
 // Reconcile the resource
-func (c *NodeController) Name() string {
-	return "provisioner.trigger.node"
-}
-
 func (c *NodeController) Reconcile(ctx context.Context, n *corev1.Node) (reconcile.Result, error) {
 	//nolint:ineffassign
-	ctx = injection.WithControllerName(ctx, c.Name()) //nolint:ineffassign,staticcheck
+	ctx = injection.WithControllerName(ctx, "provisioner.trigger.node") //nolint:ineffassign,staticcheck
 
 	// If the disruption taint doesn't exist and the deletion timestamp isn't set, it's not being disrupted.
 	// We don't check the deletion timestamp here, as we expect the termination controller to eventually set
@@ -124,10 +110,10 @@ func (c *NodeController) Reconcile(ctx context.Context, n *corev1.Node) (reconci
 	return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 }
 
-func (c *NodeController) Register(ctx context.Context, m manager.Manager) error {
+func (c *NodeController) Register(_ context.Context, m manager.Manager) error {
 	return controllerruntime.NewControllerManagedBy(m).
-		Named(c.Name()).
+		Named("provisioner.trigger.node").
 		For(&corev1.Node{}).
-		WithOptions(controller.Options{MaxConcurrentReconciles: utilscontroller.LinearScaleReconciles(utilscontroller.CPUCount(ctx), minReconciles, maxReconciles)}).
+		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
 		Complete(reconcile.AsReconciler(m.GetClient(), c))
 }

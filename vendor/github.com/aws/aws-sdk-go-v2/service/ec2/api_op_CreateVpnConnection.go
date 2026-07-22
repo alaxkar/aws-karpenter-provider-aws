@@ -69,20 +69,12 @@ type CreateVpnConnectionInput struct {
 	// The options for the VPN connection.
 	Options *types.VpnConnectionOptionsSpecification
 
-	// Specifies the storage mode for the pre-shared key (PSK). Valid values are
-	// Standard " (stored in the Site-to-Site VPN service) or SecretsManager (stored
-	// in Amazon Web Services Secrets Manager).
-	PreSharedKeyStorage *string
-
 	// The tags to apply to the VPN connection.
 	TagSpecifications []types.TagSpecification
 
 	// The ID of the transit gateway. If you specify a transit gateway, you cannot
 	// specify a virtual private gateway.
 	TransitGatewayId *string
-
-	// The ID of the VPN concentrator to associate with the VPN connection.
-	VpnConcentratorId *string
 
 	// The ID of the virtual private gateway. If you specify a virtual private
 	// gateway, you cannot specify a transit gateway.
@@ -167,9 +159,6 @@ func (c *Client) addOperationCreateVpnConnectionMiddlewares(stack *middleware.St
 	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
-	if err = addCredentialSource(stack, options); err != nil {
-		return err
-	}
 	if err = addOpCreateVpnConnectionValidationMiddleware(stack); err != nil {
 		return err
 	}
@@ -191,13 +180,16 @@ func (c *Client) addOperationCreateVpnConnectionMiddlewares(stack *middleware.St
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
+	if err = addSpanInitializeStart(stack); err != nil {
 		return err
 	}
-	if err = addInterceptAttempt(stack, options); err != nil {
+	if err = addSpanInitializeEnd(stack); err != nil {
 		return err
 	}
-	if err = addInterceptors(stack, options); err != nil {
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil

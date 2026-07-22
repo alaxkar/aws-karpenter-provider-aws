@@ -86,9 +86,7 @@ type CreateUserInput struct {
 	noSmithyDocumentSerde
 }
 
-// Contains the response to a successful [CreateUser] request.
-//
-// [CreateUser]: https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateUser.html
+// Contains the response to a successful CreateUser request.
 type CreateUserOutput struct {
 
 	// A structure with details about the new IAM user.
@@ -164,9 +162,6 @@ func (c *Client) addOperationCreateUserMiddlewares(stack *middleware.Stack, opti
 	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
-	if err = addCredentialSource(stack, options); err != nil {
-		return err
-	}
 	if err = addOpCreateUserValidationMiddleware(stack); err != nil {
 		return err
 	}
@@ -188,13 +183,16 @@ func (c *Client) addOperationCreateUserMiddlewares(stack *middleware.Stack, opti
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
+	if err = addSpanInitializeStart(stack); err != nil {
 		return err
 	}
-	if err = addInterceptAttempt(stack, options); err != nil {
+	if err = addSpanInitializeEnd(stack); err != nil {
 		return err
 	}
-	if err = addInterceptors(stack, options); err != nil {
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil

@@ -30,12 +30,6 @@ import (
 
 	"sigs.k8s.io/karpenter/pkg/controllers/state"
 	"sigs.k8s.io/karpenter/pkg/operator/injection"
-	utilscontroller "sigs.k8s.io/karpenter/pkg/utils/controller"
-)
-
-const (
-	minReconciles = 10
-	maxReconciles = 3000
 )
 
 var stateRetryPeriod = 1 * time.Minute
@@ -53,12 +47,8 @@ func NewPodController(kubeClient client.Client, cluster *state.Cluster) *PodCont
 	}
 }
 
-func (c *PodController) Name() string {
-	return "state.pod"
-}
-
 func (c *PodController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	ctx = injection.WithControllerName(ctx, c.Name())
+	ctx = injection.WithControllerName(ctx, "state.pod")
 
 	pod := &v1.Pod{}
 	if err := c.kubeClient.Get(ctx, req.NamespacedName, pod); err != nil {
@@ -78,10 +68,10 @@ func (c *PodController) Reconcile(ctx context.Context, req reconcile.Request) (r
 	return reconcile.Result{RequeueAfter: stateRetryPeriod}, nil
 }
 
-func (c *PodController) Register(ctx context.Context, m manager.Manager) error {
+func (c *PodController) Register(_ context.Context, m manager.Manager) error {
 	return controllerruntime.NewControllerManagedBy(m).
-		Named(c.Name()).
+		Named("state.pod").
 		For(&v1.Pod{}).
-		WithOptions(controller.Options{MaxConcurrentReconciles: utilscontroller.LinearScaleReconciles(utilscontroller.CPUCount(ctx), minReconciles, maxReconciles)}).
+		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
 		Complete(c)
 }

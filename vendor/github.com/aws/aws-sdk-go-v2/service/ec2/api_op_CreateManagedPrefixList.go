@@ -11,8 +11,8 @@ import (
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
-// Creates a managed prefix list. You can specify entries for the prefix list.
-// Each entry consists of a CIDR block and an optional description.
+// Creates a managed prefix list. You can specify one or more entries for the
+// prefix list. Each entry consists of a CIDR block and an optional description.
 func (c *Client) CreateManagedPrefixList(ctx context.Context, params *CreateManagedPrefixListInput, optFns ...func(*Options)) (*CreateManagedPrefixListOutput, error) {
 	if params == nil {
 		params = &CreateManagedPrefixListInput{}
@@ -148,9 +148,6 @@ func (c *Client) addOperationCreateManagedPrefixListMiddlewares(stack *middlewar
 	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
-	if err = addCredentialSource(stack, options); err != nil {
-		return err
-	}
 	if err = addIdempotencyToken_opCreateManagedPrefixListMiddleware(stack, options); err != nil {
 		return err
 	}
@@ -175,13 +172,16 @@ func (c *Client) addOperationCreateManagedPrefixListMiddlewares(stack *middlewar
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
+	if err = addSpanInitializeStart(stack); err != nil {
 		return err
 	}
-	if err = addInterceptAttempt(stack, options); err != nil {
+	if err = addSpanInitializeEnd(stack); err != nil {
 		return err
 	}
-	if err = addInterceptors(stack, options); err != nil {
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil

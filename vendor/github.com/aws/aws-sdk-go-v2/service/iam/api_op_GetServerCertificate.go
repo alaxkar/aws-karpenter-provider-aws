@@ -49,9 +49,7 @@ type GetServerCertificateInput struct {
 	noSmithyDocumentSerde
 }
 
-// Contains the response to a successful [GetServerCertificate] request.
-//
-// [GetServerCertificate]: https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetServerCertificate.html
+// Contains the response to a successful GetServerCertificate request.
 type GetServerCertificateOutput struct {
 
 	// A structure containing details about the server certificate.
@@ -129,9 +127,6 @@ func (c *Client) addOperationGetServerCertificateMiddlewares(stack *middleware.S
 	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
-	if err = addCredentialSource(stack, options); err != nil {
-		return err
-	}
 	if err = addOpGetServerCertificateValidationMiddleware(stack); err != nil {
 		return err
 	}
@@ -153,13 +148,16 @@ func (c *Client) addOperationGetServerCertificateMiddlewares(stack *middleware.S
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
+	if err = addSpanInitializeStart(stack); err != nil {
 		return err
 	}
-	if err = addInterceptAttempt(stack, options); err != nil {
+	if err = addSpanInitializeEnd(stack); err != nil {
 		return err
 	}
-	if err = addInterceptors(stack, options); err != nil {
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil

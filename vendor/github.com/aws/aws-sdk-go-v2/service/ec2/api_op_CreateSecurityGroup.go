@@ -58,10 +58,9 @@ type CreateSecurityGroupInput struct {
 	// This member is required.
 	Description *string
 
-	// The name of the security group. Names are case-insensitive and must be unique
-	// within the VPC.
+	// The name of the security group.
 	//
-	// Constraints: Up to 255 characters in length. Can't start with sg- .
+	// Constraints: Up to 255 characters in length. Cannot start with sg- .
 	//
 	// Valid characters: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
 	//
@@ -164,9 +163,6 @@ func (c *Client) addOperationCreateSecurityGroupMiddlewares(stack *middleware.St
 	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
-	if err = addCredentialSource(stack, options); err != nil {
-		return err
-	}
 	if err = addOpCreateSecurityGroupValidationMiddleware(stack); err != nil {
 		return err
 	}
@@ -188,13 +184,16 @@ func (c *Client) addOperationCreateSecurityGroupMiddlewares(stack *middleware.St
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
+	if err = addSpanInitializeStart(stack); err != nil {
 		return err
 	}
-	if err = addInterceptAttempt(stack, options); err != nil {
+	if err = addSpanInitializeEnd(stack); err != nil {
 		return err
 	}
-	if err = addInterceptors(stack, options); err != nil {
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil

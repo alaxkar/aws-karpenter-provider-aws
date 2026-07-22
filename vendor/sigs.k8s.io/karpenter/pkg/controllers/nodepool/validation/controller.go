@@ -48,17 +48,14 @@ func NewController(kubeClient client.Client, cloudProvider cloudprovider.CloudPr
 	}
 }
 
-func (c *Controller) Name() string {
-	return "nodepool.validation"
-}
-
 func (c *Controller) Reconcile(ctx context.Context, nodePool *v1.NodePool) (reconcile.Result, error) {
-	ctx = injection.WithControllerName(ctx, c.Name())
+	ctx = injection.WithControllerName(ctx, "nodepool.validation")
 	if !nodepoolutils.IsManaged(nodePool, c.cloudProvider) {
 		return reconcile.Result{}, nil
 	}
 	stored := nodePool.DeepCopy()
-	if err := nodePool.RuntimeValidate(ctx); err != nil {
+	err := nodePool.RuntimeValidate()
+	if err != nil {
 		nodePool.StatusConditions().SetFalse(v1.ConditionTypeValidationSucceeded, "NodePoolValidationFailed", err.Error())
 	} else {
 		nodePool.StatusConditions().SetTrue(v1.ConditionTypeValidationSucceeded)
@@ -79,7 +76,7 @@ func (c *Controller) Reconcile(ctx context.Context, nodePool *v1.NodePool) (reco
 
 func (c *Controller) Register(_ context.Context, m manager.Manager) error {
 	return controllerruntime.NewControllerManagedBy(m).
-		Named(c.Name()).
+		Named("nodepool.validation").
 		For(&v1.NodePool{}, builder.WithPredicates(nodepoolutils.IsManagedPredicateFuncs(c.cloudProvider))).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
 		Complete(reconcile.AsReconciler(m.GetClient(), c))

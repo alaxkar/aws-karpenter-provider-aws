@@ -67,9 +67,7 @@ type GetSSHPublicKeyInput struct {
 	noSmithyDocumentSerde
 }
 
-// Contains the response to a successful [GetSSHPublicKey] request.
-//
-// [GetSSHPublicKey]: https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetSSHPublicKey.html
+// Contains the response to a successful GetSSHPublicKey request.
 type GetSSHPublicKeyOutput struct {
 
 	// A structure containing details about the SSH public key.
@@ -145,9 +143,6 @@ func (c *Client) addOperationGetSSHPublicKeyMiddlewares(stack *middleware.Stack,
 	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
-	if err = addCredentialSource(stack, options); err != nil {
-		return err
-	}
 	if err = addOpGetSSHPublicKeyValidationMiddleware(stack); err != nil {
 		return err
 	}
@@ -169,13 +164,16 @@ func (c *Client) addOperationGetSSHPublicKeyMiddlewares(stack *middleware.Stack,
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
+	if err = addSpanInitializeStart(stack); err != nil {
 		return err
 	}
-	if err = addInterceptAttempt(stack, options); err != nil {
+	if err = addSpanInitializeEnd(stack); err != nil {
 		return err
 	}
-	if err = addInterceptors(stack, options); err != nil {
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil

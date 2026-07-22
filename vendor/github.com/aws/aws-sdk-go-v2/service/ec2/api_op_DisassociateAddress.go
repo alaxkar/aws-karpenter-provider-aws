@@ -15,15 +15,6 @@ import (
 //
 // This is an idempotent operation. If you perform the operation more than once,
 // Amazon EC2 doesn't return an error.
-//
-// An address cannot be disassociated if the all of the following conditions are
-// met:
-//
-//   - Network interface has a publicDualStackDnsName publicDnsName
-//
-//   - Public IPv4 address is the primary public IPv4 address
-//
-//   - Network interface only has one remaining public IPv4 address
 func (c *Client) DisassociateAddress(ctx context.Context, params *DisassociateAddressInput, optFns ...func(*Options)) (*DisassociateAddressOutput, error) {
 	if params == nil {
 		params = &DisassociateAddressInput{}
@@ -127,9 +118,6 @@ func (c *Client) addOperationDisassociateAddressMiddlewares(stack *middleware.St
 	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
-	if err = addCredentialSource(stack, options); err != nil {
-		return err
-	}
 	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opDisassociateAddress(options.Region), middleware.Before); err != nil {
 		return err
 	}
@@ -148,13 +136,16 @@ func (c *Client) addOperationDisassociateAddressMiddlewares(stack *middleware.St
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
+	if err = addSpanInitializeStart(stack); err != nil {
 		return err
 	}
-	if err = addInterceptAttempt(stack, options); err != nil {
+	if err = addSpanInitializeEnd(stack); err != nil {
 		return err
 	}
-	if err = addInterceptors(stack, options); err != nil {
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil

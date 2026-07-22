@@ -27,13 +27,12 @@ import (
 const (
 	voluntaryDisruptionSubsystem = "voluntary_disruption"
 	decisionLabel                = "decision"
-	ConsolidationTypeLabel       = "consolidation_type"
-	CandidatesIneligible         = "candidates_ineligible"
+	consolidationTypeLabel       = "consolidation_type"
 )
 
 func init() {
-	ConsolidationTimeoutsTotal.Add(0, map[string]string{ConsolidationTypeLabel: MultiNodeConsolidationType})
-	ConsolidationTimeoutsTotal.Add(0, map[string]string{ConsolidationTypeLabel: SingleNodeConsolidationType})
+	ConsolidationTimeoutsTotal.Add(0, map[string]string{consolidationTypeLabel: MultiNodeConsolidationType})
+	ConsolidationTimeoutsTotal.Add(0, map[string]string{consolidationTypeLabel: SingleNodeConsolidationType})
 }
 
 var (
@@ -46,7 +45,7 @@ var (
 			Help:      "Duration of the disruption decision evaluation process in seconds. Labeled by method and consolidation type.",
 			Buckets:   metrics.DurationBuckets(),
 		},
-		[]string{metrics.ReasonLabel, ConsolidationTypeLabel},
+		[]string{metrics.ReasonLabel, consolidationTypeLabel},
 	)
 	DecisionsPerformedTotal = opmetrics.NewPrometheusCounter(
 		crmetrics.Registry,
@@ -56,17 +55,7 @@ var (
 			Name:      "decisions_total",
 			Help:      "Number of disruption decisions performed. Labeled by disruption decision, reason, and consolidation type.",
 		},
-		[]string{decisionLabel, metrics.ReasonLabel, ConsolidationTypeLabel},
-	)
-	NodepoolDecisionsPerformed = opmetrics.NewPrometheusCounter(
-		crmetrics.Registry,
-		prometheus.CounterOpts{
-			Namespace: metrics.Namespace,
-			Subsystem: voluntaryDisruptionSubsystem,
-			Name:      "decisions_by_nodepool_total",
-			Help:      "Number of disruption decisions performed by nodepool. Labeled by nodepool name, disruption decision, reason, and consolidation type.",
-		},
-		[]string{metrics.NodePoolLabel, decisionLabel, metrics.ReasonLabel, ConsolidationTypeLabel},
+		[]string{decisionLabel, metrics.ReasonLabel, consolidationTypeLabel},
 	)
 	EligibleNodes = opmetrics.NewPrometheusGauge(
 		crmetrics.Registry,
@@ -86,17 +75,7 @@ var (
 			Name:      "consolidation_timeouts_total",
 			Help:      "Number of times the Consolidation algorithm has reached a timeout. Labeled by consolidation type.",
 		},
-		[]string{ConsolidationTypeLabel},
-	)
-	FailedValidationsTotal = opmetrics.NewPrometheusCounter(
-		crmetrics.Registry,
-		prometheus.CounterOpts{
-			Namespace: metrics.Namespace,
-			Subsystem: voluntaryDisruptionSubsystem,
-			Name:      "failed_validations_total",
-			Help:      "Number of candidates that were selected for disruption but failed validation. Labeled by consolidation type.",
-		},
-		[]string{ConsolidationTypeLabel},
+		[]string{consolidationTypeLabel},
 	)
 	NodePoolAllowedDisruptions = opmetrics.NewPrometheusGauge(
 		crmetrics.Registry,
@@ -107,25 +86,5 @@ var (
 			Help:      "The number of nodes for a given NodePool that can be concurrently disrupting at a point in time. Labeled by NodePool. Note that allowed disruptions can change very rapidly, as new nodes may be created and others may be deleted at any point.",
 		},
 		[]string{metrics.NodePoolLabel, metrics.ReasonLabel},
-	)
-	NodePoolNodesConsumingBudgets = opmetrics.NewPrometheusGauge(
-		crmetrics.Registry,
-		prometheus.GaugeOpts{
-			Namespace: metrics.Namespace,
-			Subsystem: metrics.NodePoolSubsystem,
-			Name:      "nodes_consuming_budgets",
-			Help:      "The number of nodes consuming the budget of a nodepool at a point in time. Labeled by NodePool.",
-		},
-		[]string{metrics.NodePoolLabel, metrics.ReasonLabel},
-	)
-	DisruptionQueueFailuresTotal = opmetrics.NewPrometheusCounter(
-		crmetrics.Registry,
-		prometheus.CounterOpts{
-			Namespace: metrics.Namespace,
-			Subsystem: voluntaryDisruptionSubsystem,
-			Name:      "queue_failures_total",
-			Help:      "The number of times that an enqueued disruption decision failed. Labeled by disruption method.",
-		},
-		[]string{decisionLabel, metrics.ReasonLabel, ConsolidationTypeLabel},
 	)
 )

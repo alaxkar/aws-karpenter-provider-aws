@@ -47,13 +47,7 @@ type ModifyIpamResourceDiscoveryInput struct {
 	// OU exclusion. There is a limit on the number of exclusions you can create. For
 	// more information, see [Quotas for your IPAM]in the Amazon VPC IPAM User Guide.
 	//
-	// The resulting set of exclusions must not result in "overlap", meaning two or
-	// more OU exclusions must not exclude the same OU. For more information and
-	// examples, see the Amazon Web Services CLI request process in [Add or remove OU exclusions]in the Amazon VPC
-	// User Guide.
-	//
 	// [Quotas for your IPAM]: https://docs.aws.amazon.com/vpc/latest/ipam/quotas-ipam.html
-	// [Add or remove OU exclusions]: https://docs.aws.amazon.com/vpc/latest/ipam/exclude-ous.html#exclude-ous-create-delete
 	AddOrganizationalUnitExclusions []types.AddIpamOrganizationalUnitExclusion
 
 	// A resource discovery description.
@@ -74,13 +68,7 @@ type ModifyIpamResourceDiscoveryInput struct {
 	// OU exclusion. There is a limit on the number of exclusions you can create. For
 	// more information, see [Quotas for your IPAM]in the Amazon VPC IPAM User Guide.
 	//
-	// The resulting set of exclusions must not result in "overlap", meaning two or
-	// more OU exclusions must not exclude the same OU. For more information and
-	// examples, see the Amazon Web Services CLI request process in [Add or remove OU exclusions]in the Amazon VPC
-	// User Guide.
-	//
 	// [Quotas for your IPAM]: https://docs.aws.amazon.com/vpc/latest/ipam/quotas-ipam.html
-	// [Add or remove OU exclusions]: https://docs.aws.amazon.com/vpc/latest/ipam/exclude-ous.html#exclude-ous-create-delete
 	RemoveOrganizationalUnitExclusions []types.RemoveIpamOrganizationalUnitExclusion
 
 	noSmithyDocumentSerde
@@ -161,9 +149,6 @@ func (c *Client) addOperationModifyIpamResourceDiscoveryMiddlewares(stack *middl
 	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
-	if err = addCredentialSource(stack, options); err != nil {
-		return err
-	}
 	if err = addOpModifyIpamResourceDiscoveryValidationMiddleware(stack); err != nil {
 		return err
 	}
@@ -185,13 +170,16 @@ func (c *Client) addOperationModifyIpamResourceDiscoveryMiddlewares(stack *middl
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
+	if err = addSpanInitializeStart(stack); err != nil {
 		return err
 	}
-	if err = addInterceptAttempt(stack, options); err != nil {
+	if err = addSpanInitializeEnd(stack); err != nil {
 		return err
 	}
-	if err = addInterceptors(stack, options); err != nil {
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil

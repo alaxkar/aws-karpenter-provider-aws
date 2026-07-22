@@ -35,9 +35,7 @@ type GenerateCredentialReportInput struct {
 	noSmithyDocumentSerde
 }
 
-// Contains the response to a successful [GenerateCredentialReport] request.
-//
-// [GenerateCredentialReport]: https://docs.aws.amazon.com/IAM/latest/APIReference/API_GenerateCredentialReport.html
+// Contains the response to a successful GenerateCredentialReport request.
 type GenerateCredentialReportOutput struct {
 
 	// Information about the credential report.
@@ -116,9 +114,6 @@ func (c *Client) addOperationGenerateCredentialReportMiddlewares(stack *middlewa
 	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
-	if err = addCredentialSource(stack, options); err != nil {
-		return err
-	}
 	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opGenerateCredentialReport(options.Region), middleware.Before); err != nil {
 		return err
 	}
@@ -137,13 +132,16 @@ func (c *Client) addOperationGenerateCredentialReportMiddlewares(stack *middlewa
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
+	if err = addSpanInitializeStart(stack); err != nil {
 		return err
 	}
-	if err = addInterceptAttempt(stack, options); err != nil {
+	if err = addSpanInitializeEnd(stack); err != nil {
 		return err
 	}
-	if err = addInterceptors(stack, options); err != nil {
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil

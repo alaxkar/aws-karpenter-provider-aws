@@ -113,10 +113,6 @@ func (c ConditionSet) Set(condition Condition) (modified bool) {
 	condition.ObservedGeneration = c.object.GetGeneration()
 	for _, cond := range c.object.GetConditions() {
 		if cond.Type != condition.Type {
-			// If we are deleting, we just bump all the observed generations
-			if !c.object.GetDeletionTimestamp().IsZero() {
-				cond.ObservedGeneration = c.object.GetGeneration()
-			}
 			conditions = append(conditions, cond)
 		} else {
 			foundCondition = true

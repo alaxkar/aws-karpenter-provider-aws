@@ -12,7 +12,7 @@ import (
 )
 
 // Creates a new virtual MFA device for the Amazon Web Services account. After
-// creating the virtual MFA, use [EnableMFADevice]to attach the MFA device to an IAM user. For more
+// creating the virtual MFA, use EnableMFADeviceto attach the MFA device to an IAM user. For more
 // information about creating and working with virtual MFA devices, see [Using a virtual MFA device]in the IAM
 // User Guide.
 //
@@ -26,7 +26,6 @@ import (
 // information is destroyed following secure procedures.
 //
 // [Using a virtual MFA device]: https://docs.aws.amazon.com/IAM/latest/UserGuide/Using_VirtualMFA.html
-// [EnableMFADevice]: https://docs.aws.amazon.com/IAM/latest/APIReference/API_EnableMFADevice.html
 // [IAM and STS quotas]: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html
 func (c *Client) CreateVirtualMFADevice(ctx context.Context, params *CreateVirtualMFADeviceInput, optFns ...func(*Options)) (*CreateVirtualMFADeviceOutput, error) {
 	if params == nil {
@@ -85,9 +84,7 @@ type CreateVirtualMFADeviceInput struct {
 	noSmithyDocumentSerde
 }
 
-// Contains the response to a successful [CreateVirtualMFADevice] request.
-//
-// [CreateVirtualMFADevice]: https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateVirtualMFADevice.html
+// Contains the response to a successful CreateVirtualMFADevice request.
 type CreateVirtualMFADeviceOutput struct {
 
 	// A structure containing details about the new virtual MFA device.
@@ -165,9 +162,6 @@ func (c *Client) addOperationCreateVirtualMFADeviceMiddlewares(stack *middleware
 	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
-	if err = addCredentialSource(stack, options); err != nil {
-		return err
-	}
 	if err = addOpCreateVirtualMFADeviceValidationMiddleware(stack); err != nil {
 		return err
 	}
@@ -189,13 +183,16 @@ func (c *Client) addOperationCreateVirtualMFADeviceMiddlewares(stack *middleware
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
+	if err = addSpanInitializeStart(stack); err != nil {
 		return err
 	}
-	if err = addInterceptAttempt(stack, options); err != nil {
+	if err = addSpanInitializeEnd(stack); err != nil {
 		return err
 	}
-	if err = addInterceptors(stack, options); err != nil {
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil

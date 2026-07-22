@@ -44,12 +44,11 @@ import (
 // communication using the thumbprints set in the IdP's configuration.
 //
 // The trust for the OIDC provider is derived from the IAM provider that this
-// operation creates. Therefore, it is best to limit access to the [CreateOpenIDConnectProvider]operation to
+// operation creates. Therefore, it is best to limit access to the CreateOpenIDConnectProvideroperation to
 // highly privileged users.
 //
 // [OpenID Connect (OIDC)]: http://openid.net/connect/
 // [Creating a role for web identity or OpenID connect federation]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-idp_oidc.html
-// [CreateOpenIDConnectProvider]: https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateOpenIDConnectProvider.html
 func (c *Client) CreateOpenIDConnectProvider(ctx context.Context, params *CreateOpenIDConnectProviderInput, optFns ...func(*Options)) (*CreateOpenIDConnectProviderOutput, error) {
 	if params == nil {
 		params = &CreateOpenIDConnectProviderInput{}
@@ -133,15 +132,11 @@ type CreateOpenIDConnectProviderInput struct {
 	noSmithyDocumentSerde
 }
 
-// Contains the response to a successful [CreateOpenIDConnectProvider] request.
-//
-// [CreateOpenIDConnectProvider]: https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateOpenIDConnectProvider.html
+// Contains the response to a successful CreateOpenIDConnectProvider request.
 type CreateOpenIDConnectProviderOutput struct {
 
 	// The Amazon Resource Name (ARN) of the new IAM OpenID Connect provider that is
-	// created. For more information, see [OpenIDConnectProviderListEntry].
-	//
-	// [OpenIDConnectProviderListEntry]: https://docs.aws.amazon.com/IAM/latest/APIReference/API_OpenIDConnectProviderListEntry.html
+	// created. For more information, see OpenIDConnectProviderListEntry.
 	OpenIDConnectProviderArn *string
 
 	// A list of tags that are attached to the new IAM OIDC provider. The returned
@@ -221,9 +216,6 @@ func (c *Client) addOperationCreateOpenIDConnectProviderMiddlewares(stack *middl
 	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
-	if err = addCredentialSource(stack, options); err != nil {
-		return err
-	}
 	if err = addOpCreateOpenIDConnectProviderValidationMiddleware(stack); err != nil {
 		return err
 	}
@@ -245,13 +237,16 @@ func (c *Client) addOperationCreateOpenIDConnectProviderMiddlewares(stack *middl
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
+	if err = addSpanInitializeStart(stack); err != nil {
 		return err
 	}
-	if err = addInterceptAttempt(stack, options); err != nil {
+	if err = addSpanInitializeEnd(stack); err != nil {
 		return err
 	}
-	if err = addInterceptors(stack, options); err != nil {
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil

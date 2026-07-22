@@ -37,7 +37,6 @@ type PodOptions struct {
 	Overhead                      v1.ResourceList
 	PriorityClassName             string
 	InitContainers                []v1.Container
-	PodResourceRequirements       v1.ResourceRequirements
 	ResourceRequirements          v1.ResourceRequirements
 	NodeSelector                  map[string]string
 	NodeRequirements              []v1.NodeSelectorRequirement
@@ -59,18 +58,14 @@ type PodOptions struct {
 	LivenessProbe                 *v1.Probe
 	PreStopSleep                  *int64
 	Command                       []string
-	ResourceClaims                []v1.PodResourceClaim
-	ContainerResourceClaims       []v1.ResourceClaim
-	InitContainerResourceClaims   []v1.ResourceClaim
 }
 
 type PDBOptions struct {
 	metav1.ObjectMeta
-	Labels                     map[string]string
-	MinAvailable               *intstr.IntOrString
-	MaxUnavailable             *intstr.IntOrString
-	UnhealthyPodEvictionPolicy *policyv1.UnhealthyPodEvictionPolicyType
-	Status                     *policyv1.PodDisruptionBudgetStatus
+	Labels         map[string]string
+	MinAvailable   *intstr.IntOrString
+	MaxUnavailable *intstr.IntOrString
+	Status         *policyv1.PodDisruptionBudgetStatus
 }
 
 type EphemeralVolumeTemplateOptions struct {
@@ -78,8 +73,7 @@ type EphemeralVolumeTemplateOptions struct {
 }
 
 var (
-	DefaultImage        = "public.ecr.aws/eks-distro/kubernetes/pause:3.2"
-	KWOKDelayAnnotation = "pod-delete.stage.kwok.x-k8s.io/delay"
+	DefaultImage = "public.ecr.aws/eks-distro/kubernetes/pause:3.2"
 )
 
 // Pod creates a test pod with defaults that can be overridden by PodOptions.
@@ -132,11 +126,10 @@ func Pod(overrides ...PodOptions) *v1.Pod {
 			Affinity:                  buildAffinity(options),
 			TopologySpreadConstraints: options.TopologySpreadConstraints,
 			Tolerations:               options.Tolerations,
-			Resources:                 &options.PodResourceRequirements,
 			Containers: []v1.Container{{
 				Name:      RandomName(),
 				Image:     options.Image,
-				Resources: buildResourceRequirements(options),
+				Resources: options.ResourceRequirements,
 				Ports: lo.Map(options.HostPorts, func(p int32, _ int) v1.ContainerPort {
 					return v1.ContainerPort{
 						HostPort:      p,
@@ -152,7 +145,6 @@ func Pod(overrides ...PodOptions) *v1.Pod {
 			PriorityClassName:             options.PriorityClassName,
 			RestartPolicy:                 options.RestartPolicy,
 			TerminationGracePeriodSeconds: options.TerminationGracePeriodSeconds,
-			ResourceClaims:                options.ResourceClaims,
 		},
 		Status: v1.PodStatus{
 			Conditions: options.Conditions,
@@ -163,16 +155,13 @@ func Pod(overrides ...PodOptions) *v1.Pod {
 	// Can't use v1.LifecycleHandler == v1.SleepAction as that's a feature gate in Alpha 1.29.
 	// https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#hook-handler-implementations
 	if options.PreStopSleep != nil {
-		p.Annotations = lo.Assign(p.Annotations, map[string]string{
-			KWOKDelayAnnotation: fmt.Sprintf("%ds", lo.FromPtr(options.PreStopSleep)),
-		})
 		p.Spec.Containers[0].Lifecycle = &v1.Lifecycle{
 			PreStop: &v1.LifecycleHandler{
 				Exec: &v1.ExecAction{
 					Command: []string{
 						"/bin/sh",
 						"-c",
-						fmt.Sprintf("sleep %d", lo.FromPtr(options.PreStopSleep)),
+						fmt.Sprintf("sleep %d", *options.PreStopSleep),
 					},
 				},
 			},
@@ -190,23 +179,13 @@ func Pod(overrides ...PodOptions) *v1.Pod {
 			if init.Image == "" {
 				init.Image = DefaultImage
 			}
-			// Add init container resource claims if specified
-			if len(options.InitContainerResourceClaims) > 0 {
-				init.Resources.Claims = options.InitContainerResourceClaims
-			}
 			p.Spec.InitContainers = append(p.Spec.InitContainers, init)
 		}
 	}
 	return p
 }
 
-func buildResourceRequirements(options PodOptions) v1.ResourceRequirements {
-	resources := options.ResourceRequirements
-	if len(options.ContainerResourceClaims) > 0 {
-		resources.Claims = options.ContainerResourceClaims
-	}
-	return resources
-} // Pods creates homogeneous groups of pods based on the passed in options, evenly divided by the total pods requested
+// Pods creates homogeneous groups of pods based on the passed in options, evenly divided by the total pods requested
 func Pods(total int, options ...PodOptions) []*v1.Pod {
 	pods := []*v1.Pod{}
 	for _, opts := range options {
@@ -269,8 +248,7 @@ func PodDisruptionBudget(overrides ...PDBOptions) *policyv1.PodDisruptionBudget 
 			Selector: &metav1.LabelSelector{
 				MatchLabels: options.Labels,
 			},
-			MaxUnavailable:             options.MaxUnavailable,
-			UnhealthyPodEvictionPolicy: options.UnhealthyPodEvictionPolicy,
+			MaxUnavailable: options.MaxUnavailable,
 		},
 		Status: status,
 	}
@@ -397,9 +375,6 @@ func MakeTopologySpreadPodOptions(key string) PodOptions {
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: RandomLabels(),
 				},
-				// TODO(maxcao13): without this, scheduler will consider all nodes in the cluster, which may have AWS zones like us-east-1a (topology.kubernetes.io/zone)
-				// Kubernetes will be unable to schedule the test pods onto those pods in order to fulfill the tsc maxSkew in the Performance test.
-				NodeTaintsPolicy: lo.ToPtr(v1.NodeInclusionPolicyHonor),
 			},
 		},
 		ResourceRequirements: v1.ResourceRequirements{
@@ -430,24 +405,6 @@ func MakeDiversePodOptions() []PodOptions {
 	pods = append(pods, MakePodAffinityPodOptions(v1.LabelTopologyZone))
 	pods = append(pods, MakePodAntiAffinityPodOptions(v1.LabelHostname))
 	return pods
-}
-
-func MakeDRAPodOptions(claimName string) PodOptions {
-	return PodOptions{
-		ObjectMeta: metav1.ObjectMeta{Labels: lo.Assign(RandomLabels(), map[string]string{DiscoveryLabel: "owned"})},
-		ResourceRequirements: v1.ResourceRequirements{
-			Requests: v1.ResourceList{
-				v1.ResourceCPU:    RandomCPU(),
-				v1.ResourceMemory: RandomMemory(),
-			},
-		},
-		ContainerResourceClaims: []v1.ResourceClaim{
-			{Name: claimName},
-		},
-		ResourceClaims: []v1.PodResourceClaim{
-			{Name: claimName},
-		},
-	}
 }
 
 func RandomAffinityLabels() map[string]string {

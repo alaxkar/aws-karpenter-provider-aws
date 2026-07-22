@@ -69,17 +69,9 @@ type CreateAssociationInput struct {
 	AlarmConfiguration *types.AlarmConfiguration
 
 	// By default, when you create a new association, the system runs it immediately
-	// after it is created and then according to the schedule you specified and when
-	// target changes are detected. Specify true for ApplyOnlyAtCronInterval if you
-	// want the association to run only according to the schedule you specified.
-	//
-	// For more information, see [Understanding when associations are applied to resources] and [>About target updates with Automation runbooks] in the Amazon Web Services Systems Manager User
-	// Guide.
-	//
-	// This parameter isn't supported for rate expressions.
-	//
-	// [Understanding when associations are applied to resources]: https://docs.aws.amazon.com/systems-manager/latest/userguide/state-manager-about.html#state-manager-about-scheduling
-	// [>About target updates with Automation runbooks]: https://docs.aws.amazon.com/systems-manager/latest/userguide/state-manager-about.html#runbook-target-updates
+	// after it is created and then according to the schedule you specified. Specify
+	// this option if you don't want an association to run immediately after you create
+	// it. This parameter isn't supported for rate expressions.
 	ApplyOnlyAtCronInterval bool
 
 	// Specify a descriptive name for the association.
@@ -91,10 +83,9 @@ type CreateAssociationInput struct {
 	// Systems Manager.
 	AutomationTargetParameterName *string
 
-	// The names of Amazon Resource Names (ARNs) of the Change Calendar type documents
+	// The names or Amazon Resource Names (ARNs) of the Change Calendar type documents
 	// you want to gate your associations under. The associations only run when that
-	// change calendar is open. For more information, see [Amazon Web Services Systems Manager Change Calendar]in the Amazon Web Services
-	// Systems Manager User Guide.
+	// change calendar is open. For more information, see [Amazon Web Services Systems Manager Change Calendar].
 	//
 	// [Amazon Web Services Systems Manager Change Calendar]: https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-change-calendar
 	CalendarNames []string
@@ -214,8 +205,6 @@ type CreateAssociationInput struct {
 	// A location is a combination of Amazon Web Services Regions and Amazon Web
 	// Services accounts where you want to run the association. Use this action to
 	// create an association in multiple Regions and multiple accounts.
-	//
-	// The IncludeChildOrganizationUnits parameter is not supported by State Manager.
 	TargetLocations []types.TargetLocation
 
 	// A key-value mapping of document parameters to target resources. Both Targets
@@ -310,9 +299,6 @@ func (c *Client) addOperationCreateAssociationMiddlewares(stack *middleware.Stac
 	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
-	if err = addCredentialSource(stack, options); err != nil {
-		return err
-	}
 	if err = addOpCreateAssociationValidationMiddleware(stack); err != nil {
 		return err
 	}
@@ -334,13 +320,16 @@ func (c *Client) addOperationCreateAssociationMiddlewares(stack *middleware.Stac
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
+	if err = addSpanInitializeStart(stack); err != nil {
 		return err
 	}
-	if err = addInterceptAttempt(stack, options); err != nil {
+	if err = addSpanInitializeEnd(stack); err != nil {
 		return err
 	}
-	if err = addInterceptors(stack, options); err != nil {
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil

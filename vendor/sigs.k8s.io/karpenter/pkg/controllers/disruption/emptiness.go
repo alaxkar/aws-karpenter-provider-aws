@@ -18,34 +18,33 @@ package disruption
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
-	"github.com/awslabs/operatorpkg/option"
+	"github.com/samber/lo"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	v1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 	disruptionevents "sigs.k8s.io/karpenter/pkg/controllers/disruption/events"
+	"sigs.k8s.io/karpenter/pkg/controllers/provisioning/scheduling"
 )
 
 // Emptiness is a subreconciler that deletes empty candidates.
 type Emptiness struct {
 	consolidation
-	validator Validator
 }
 
-func NewEmptiness(c consolidation, opts ...option.Function[MethodOptions]) *Emptiness {
-	o := option.Resolve(append([]option.Function[MethodOptions]{WithValidator(NewEmptinessValidator(c))}, opts...)...)
-	return &Emptiness{consolidation: c, validator: o.validator}
+func NewEmptiness(c consolidation) *Emptiness {
+	return &Emptiness{
+		consolidation: c,
+	}
 }
 
 // ShouldDisrupt is a predicate used to filter candidates
 func (e *Emptiness) ShouldDisrupt(_ context.Context, c *Candidate) bool {
-	if c.OwnedByStaticNodePool() {
-		return false
-	}
 	// If consolidation is disabled, don't do anything. This emptiness should run for both WhenEmpty and WhenEmptyOrUnderutilized
-	if c.NodePool.Spec.Disruption.ConsolidateAfter.Duration == nil {
-		e.recorder.Publish(disruptionevents.Unconsolidatable(c.Node, c.NodeClaim, fmt.Sprintf("NodePool %q has consolidation disabled", c.NodePool.Name))...)
+	if c.nodePool.Spec.Disruption.ConsolidateAfter.Duration == nil {
+		e.recorder.Publish(disruptionevents.Unconsolidatable(c.Node, c.NodeClaim, fmt.Sprintf("NodePool %q has consolidation disabled", c.nodePool.Name))...)
 		return false
 	}
 	// return true if there are no pods and the nodeclaim is consolidatable
@@ -55,9 +54,9 @@ func (e *Emptiness) ShouldDisrupt(_ context.Context, c *Candidate) bool {
 // ComputeCommand generates a disruption command given candidates
 //
 //nolint:gocyclo
-func (e *Emptiness) ComputeCommands(ctx context.Context, disruptionBudgetMapping map[string]int, candidates ...*Candidate) ([]Command, error) {
+func (e *Emptiness) ComputeCommand(ctx context.Context, disruptionBudgetMapping map[string]int, candidates ...*Candidate) (Command, scheduling.Results, error) {
 	if e.IsConsolidated() {
-		return []Command{}, nil
+		return Command{}, scheduling.Results{}, nil
 	}
 	candidates = e.sortCandidates(candidates)
 
@@ -67,7 +66,7 @@ func (e *Emptiness) ComputeCommands(ctx context.Context, disruptionBudgetMapping
 		if len(candidate.reschedulablePods) > 0 {
 			continue
 		}
-		if disruptionBudgetMapping[candidate.NodePool.Name] == 0 {
+		if disruptionBudgetMapping[candidate.nodePool.Name] == 0 {
 			// set constrainedByBudgets to true if any node was a candidate but was constrained by a budget
 			constrainedByBudgets = true
 			continue
@@ -75,7 +74,7 @@ func (e *Emptiness) ComputeCommands(ctx context.Context, disruptionBudgetMapping
 		// If there's disruptions allowed for the candidate's nodepool,
 		// add it to the list of candidates, and decrement the budget.
 		empty = append(empty, candidate)
-		disruptionBudgetMapping[candidate.NodePool.Name]--
+		disruptionBudgetMapping[candidate.nodePool.Name]--
 	}
 	// none empty, so do nothing
 	if len(empty) == 0 {
@@ -85,21 +84,41 @@ func (e *Emptiness) ComputeCommands(ctx context.Context, disruptionBudgetMapping
 		if !constrainedByBudgets {
 			e.markConsolidated()
 		}
-		return []Command{}, nil
+		return Command{}, scheduling.Results{}, nil
 	}
 
 	cmd := Command{
-		Candidates: empty,
+		candidates: empty,
 	}
-	validCmd, err := e.validator.Validate(ctx, cmd, consolidationTTL)
+
+	// Empty Node Consolidation doesn't use Validation as we get to take advantage of cluster.IsNodeNominated.  This
+	// lets us avoid a scheduling simulation (which is performed periodically while pending pods exist and drives
+	// cluster.IsNodeNominated already).
+	select {
+	case <-ctx.Done():
+		return Command{}, scheduling.Results{}, errors.New("interrupted")
+	case <-e.clock.After(consolidationTTL):
+	}
+
+	v := NewValidation(e.clock, e.cluster, e.kubeClient, e.provisioner, e.cloudProvider, e.recorder, e.queue, e.Reason())
+	validatedCandidates, err := v.ValidateCandidates(ctx, cmd.candidates...)
 	if err != nil {
 		if IsValidationError(err) {
-			log.FromContext(ctx).V(1).WithValues(cmd.LogValues()...).Info("abandoning empty node consolidation attempt due to pod churn, command is no longer valid")
-			return []Command{}, nil
+			log.FromContext(ctx).V(1).Info(fmt.Sprintf("abandoning empty node consolidation attempt due to pod churn, command is no longer valid, %s", cmd))
+			return Command{}, scheduling.Results{}, nil
 		}
-		return []Command{}, err
+		return Command{}, scheduling.Results{}, err
 	}
-	return []Command{validCmd}, nil
+
+	// TODO (jmdeal@): better encapsulate within validation
+	if lo.ContainsBy(validatedCandidates, func(c *Candidate) bool {
+		return len(c.reschedulablePods) != 0
+	}) {
+		log.FromContext(ctx).V(1).Info(fmt.Sprintf("abandoning empty node consolidation attempt due to pod churn, command is no longer valid, %s", cmd))
+		return Command{}, scheduling.Results{}, nil
+	}
+
+	return cmd, scheduling.Results{}, nil
 }
 
 func (e *Emptiness) Reason() v1.DisruptionReason {

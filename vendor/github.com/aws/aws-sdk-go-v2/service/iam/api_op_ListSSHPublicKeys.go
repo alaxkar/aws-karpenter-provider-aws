@@ -71,9 +71,7 @@ type ListSSHPublicKeysInput struct {
 	noSmithyDocumentSerde
 }
 
-// Contains the response to a successful [ListSSHPublicKeys] request.
-//
-// [ListSSHPublicKeys]: https://docs.aws.amazon.com/IAM/latest/APIReference/API_ListSSHPublicKeys.html
+// Contains the response to a successful ListSSHPublicKeys request.
 type ListSSHPublicKeysOutput struct {
 
 	// A flag that indicates whether there are more items to return. If your results
@@ -161,9 +159,6 @@ func (c *Client) addOperationListSSHPublicKeysMiddlewares(stack *middleware.Stac
 	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
-	if err = addCredentialSource(stack, options); err != nil {
-		return err
-	}
 	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opListSSHPublicKeys(options.Region), middleware.Before); err != nil {
 		return err
 	}
@@ -182,13 +177,16 @@ func (c *Client) addOperationListSSHPublicKeysMiddlewares(stack *middleware.Stac
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
+	if err = addSpanInitializeStart(stack); err != nil {
 		return err
 	}
-	if err = addInterceptAttempt(stack, options); err != nil {
+	if err = addSpanInitializeEnd(stack); err != nil {
 		return err
 	}
-	if err = addInterceptors(stack, options); err != nil {
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil
